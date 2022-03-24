@@ -1,0 +1,30 @@
+{
+  "dependencies": {
+    "@types/express": "^4.17.13",
+    "axios": "^0.26.1",
+    "axios-cookiejar-support": "^2.0.4",
+    "dotenv": "^16.0.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.3",
+    "express-rate-limit": "^6.3.0",
+    "node-cron": "^3.0.0",
+    "tough-cookie": "^4.0.0"
+  },
+  "name": "store",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^17.0.23",
+    "@types/node-cron": "^3.0.1",
+    "@types/tough-cookie": "^4.0.1",
+    "ts-node": "^10.7.0",
+    "tsconfig-paths": "^3.14.1"
+  }
+}
