@@ -150,20 +150,6 @@ class PasswordAuthProvider implements AuthProvider {
 	}
 }
 
-type SkinTier = "Select" | "Deluxe" | "Premium" | "Ultra" | "Exclusive";
-type SkinMeta = {
-	displayName: string;
-	price: number;
-	tier: SkinTier;
-	image: string;
-};
-type StorefrontResponse = {
-	offers: {
-		expiration: Date;
-		items: Array<SkinMeta>;
-	};
-};
-
 type RiotStorefrontResponse = {
 	FeaturedBundle: {
 		Bundle: {
@@ -185,11 +171,57 @@ type RiotStorefrontResponse = {
 			DurationRemainingInSeconds: number;
 			WholesaleOnly: boolean;
 		};
-		BundleRemainingDurationInSeconds: string;
+		BundleRemainingDurationInSeconds: number;
 	};
 	SkinsPanelLayout: {
 		SingleItemOffers: [string, string, string, string];
 		SingleItemOffersRemainingDurationInSeconds: number;
+	};
+};
+
+type SkinTier = "Select" | "Deluxe" | "Premium" | "Ultra" | "Exclusive";
+const SkinTierUUID: { [uuid: string]: { tier: SkinTier; image: string } } = {
+	"12683d76-48d7-84a3-4e09-6985794f0445": {
+		tier: "Select",
+		image:
+			"https://media.valorant-api.com/contenttiers/12683d76-48d7-84a3-4e09-6985794f0445/displayicon.png",
+	},
+	"0cebb8be-46d7-c12a-d306-e9907bfc5a25": {
+		tier: "Deluxe",
+		image:
+			"https://media.valorant-api.com/contenttiers/0cebb8be-46d7-c12a-d306-e9907bfc5a25/displayicon.png",
+	},
+	"60bca009-4182-7998-dee7-b8a2558dc369": {
+		tier: "Premium",
+		image:
+			"https://media.valorant-api.com/contenttiers/60bca009-4182-7998-dee7-b8a2558dc369/displayicon.png",
+	},
+	"411e4a55-4e59-7757-41f0-86a53f101bb5": {
+		tier: "Ultra",
+		image:
+			"https://media.valorant-api.com/contenttiers/411e4a55-4e59-7757-41f0-86a53f101bb5/displayicon.png",
+	},
+	"e046854e-406c-37f4-6607-19a9ba8426fc": {
+		tier: "Exclusive",
+		image:
+			"https://media.valorant-api.com/contenttiers/e046854e-406c-37f4-6607-19a9ba8426fc/displayicon.png",
+	},
+};
+type SkinMeta = {
+	displayName: string;
+	price: number;
+	tier: SkinTier;
+	image: string;
+};
+type StorefrontResponse = {
+	offers: {
+		items: Array<SkinMeta>;
+		expiry: Date;
+	};
+	bundle: {
+		name: string;
+		cover: string;
+		expiry: Date;
 	};
 };
 
@@ -200,16 +232,34 @@ class Storefront {
 		this.authProvider = authProvider;
 	}
 
-	async getOffers() {
+	async getOffers(): StorefrontResponse {
 		const bundle = await this.authProvider.getAuthBundle();
-		const offers = await this._getOffersRaw(bundle);
-		const skins = offers.SkinsPanelLayout.SingleItemOffers;
+		const storefront = await this._getStorefrontRaw(bundle);
 
-		const skinsjson = JSON.parse(fs.readFileSync("skins.json", "utf-8"));
-		console.log(skins.map((uuid) => skinsjson[uuid].display_name));
+		const offersExpiry = new Date();
+		const bundleExpiry = new Date();
+		offersExpiry.setSeconds(
+			offersExpiry.getSeconds() +
+				storefront.SkinsPanelLayout.SingleItemOffersRemainingDurationInSeconds
+		);
+		bundleExpiry.setSeconds(
+			bundleExpiry.getSeconds() +
+				storefront.FeaturedBundle.BundleRemainingDurationInSeconds
+		);
+
+		return {
+			offers: {
+				expiry: offersExpiry,
+			},
+			bundle: {
+				name: storefront.FeaturedBundle.Bundle.DataAssetID,
+				cover: storefront.FeaturedBundle.Bundle.CurrencyID,
+				expiry: bundleExpiry,
+			},
+		};
 	}
 
-	private async _getOffersRaw(bundle: RiotAuthBundle) {
+	private async _getStorefrontRaw(bundle: RiotAuthBundle) {
 		const storefrontResponse = await axios.get<RiotStorefrontResponse>(
 			RIOT_STOREFRONT_ENDPOINT(bundle.puuid),
 			{
@@ -219,8 +269,7 @@ class Storefront {
 				},
 			}
 		);
-		const storefrontData = storefrontResponse.data;
-		return storefrontData;
+		return storefrontResponse.data;
 	}
 }
 
