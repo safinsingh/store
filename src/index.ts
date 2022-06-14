@@ -66,7 +66,7 @@ class PasswordAuthProvider implements AuthProvider {
 	async getAuthBundle(): Promise<RiotAuthBundle> {
 		if (!this.bundle || this.expiry < new Date()) {
 			const riotToken = await this.getRiotToken();
-			const entitlementsToken = await this.getentitlementsToken(riotToken);
+			const entitlementsToken = await this.getEntitlementsToken(riotToken);
 			const puuid = await this.getPuuid(riotToken);
 
 			const expiry = new Date();
@@ -124,7 +124,7 @@ class PasswordAuthProvider implements AuthProvider {
 		return authorizationToken;
 	}
 
-	async getentitlementsToken(authorizationToken: string) {
+	async getEntitlementsToken(authorizationToken: string) {
 		const entitlementsResponse = await this.httpClient.post(
 			RIOT_ENTITLEMENTS_ENDPOINT,
 			{},
